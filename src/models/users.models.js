@@ -1,4 +1,5 @@
 import { pool } from '../db.js';
+import bcrypt from 'bcrypt';
 
 export class UsersModel {
   static async create(userData) {
@@ -88,4 +89,9 @@ export class UsersModel {
       throw error;
     }
   }
+
+  static async comparePasswords (plainPassword, hashedPassword){
+    return await bcrypt.compare(plainPassword, hashedPassword);
+  }
 }
+

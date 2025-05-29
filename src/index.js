@@ -8,6 +8,7 @@ import studentClassRoutes from './routes/studentclass.routes.js'
 import attendanceRoutes from './routes/attendance.routes.js'
 import classMessageRoutes from './routes/classmessage.routes.js'
 import itemsRoutes from './routes/items.routes.js'
+import authRoutes from './routes/auth.routes.js'
 dotenv.config();
 const PORT = process.env.PORT || 5000;
 
@@ -22,6 +23,7 @@ app.use(studentClassRoutes);
 app.use(attendanceRoutes);
 app.use(classMessageRoutes);
 app.use(itemsRoutes);
+app.use(authRoutes);
 
 app.listen(PORT, ()=>{console.log("Running on port:", PORT)});
 
