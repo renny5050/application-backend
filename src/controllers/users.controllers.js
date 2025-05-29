@@ -46,7 +46,6 @@ export const createUser = async (req, res) => {
             lastName: req.body.lastName,
             email: req.body.email,
             password: hashedPassword,
-            role: req.body.role ?? 3, //Rol default de estudiante
             dni: req.body.dni,
             status: "active"
         };
@@ -55,7 +54,7 @@ export const createUser = async (req, res) => {
         const newUser = await UsersModel.create(userData);
         
         // 5. Eliminar contraseña de la respuesta
-        const { password, ...safeUser } = newUser;
+        const { password, ..safeUser } = newUser;
         
         // 6. Respuesta segura
         res.status(201).json(safeUser);
