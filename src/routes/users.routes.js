@@ -1,19 +1,21 @@
-import {Router} from 'express'
-import { deleteUser, getuser, updateUser, getUsers, getRoles, registerUser } from '../controllers/users.controllers.js';
+import { Router } from 'express';
+import { getUsers, findUserById, createUser, updateUser, deleteUser } from '../controllers/users.controllers.js';
 
+// Obtener todos los usuarios
 const router = Router();
+router.get('/api/users', getUsers);
 
-router.get('/api/auth/users', getUsers)
 
-router.get('/api/auth/users/:id', getuser)
+// Obtener un usuario específico por ID
+router.get('/api/users/:id', findUserById);
 
-router.delete('/api/auth/users/:id', deleteUser)
+// Crear nuevo usuario
+router.post('/api/users', createUser);
 
-router.put('/api/auth/users/:id', updateUser)
+// Actualizar usuario existente
+router.put('/api/users/:id', updateUser);
 
-router.get('/api/auth/roles', getRoles)
-
-router.post('/api/auth/register', registerUser)
-
+// Eliminar usuario
+router.delete('/api/users/:id', deleteUser);
 
 export default router;

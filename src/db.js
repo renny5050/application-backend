@@ -1,10 +1,20 @@
 import pg from "pg";
-import { DB_DATABASE, DB_HOST, DB_PASSWORD, DB_PORT, DB_USER } from "./config.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export const pool = new pg.Pool({
-    user: DB_USER,
-    host: DB_HOST,
-    password: DB_PASSWORD,
-    database: DB_DATABASE,
-    port: DB_PORT,
-})
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    port: process.env.DB_PORT,
+});
+
+pool.query('SELECT NOW()', (err, result) => {
+    if (err) {
+        console.error('Error executing test query', err.stack);
+    } else {
+        console.log('Database connected:', result.rows[0]);
+    }
+});

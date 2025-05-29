@@ -1,98 +1,127 @@
- import { pool } from '../db.js';
+import { UsersModel } from "../models/users.models.js";
+import bcrypt from 'bcrypt';
 
- export const getUsers = async (req, res) => {
- 
-     const {rows} = await pool.query('SELECT * FROM "User"')
- 
-     res.json(rows)
- }
- 
- export const getuser = async (req, res) => {
-    const {id} = req.params;
-
-    const {rows} = await pool.query('SELECT * FROM users WHERE id_users = $1', [id]);
-
-
-    if (rows.length === 0) return res.status(404).json({message: 'Usuario no encontrado'})
-
-    res.json(rows[0])
+export const getUsers = async (req, res) => {
+    try {
+        const data = await UsersModel.findAll();
+        res.json(data);
+    } catch (error) {
+        console.error('Error al obtener usuarios:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
 }
 
+export const findUserById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await UsersModel.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+        res.json(user);
+    } catch (error) {
+        console.error('Error al buscar usuario por ID:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+}
 
-export const deleteUser = async (req, res) => {
-    const {id} = req.params;
+export const createUser = async (req, res) => {
+    try {
+        // 1. Validación básica
+        const requiredFields = ['firstName', 'lastName', 'email', 'dni', 'password'];
+        for (const field of requiredFields) {
+            if (!req.body[field]) {
+                return res.status(400).json({ 
+                    message: `Campo requerido faltante: ${field}`
+                });
+            }
+        }
 
-    const {rowCount} = await pool.query('DELETE FROM users WHERE id_users = $1 returning *', [id])
+        // 2. Hashear contraseña
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
-    if (rowCount === 0) return res.status(404).json({message: 'Usuario no encontrado'})
+        // 3. Preparar datos seguros
+        const userData = {
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            email: req.body.email,
+            password: hashedPassword,
+            role: req.body.role ?? 3, //Rol default de estudiante
+            dni: req.body.dni,
+            status: "active"
+        };
 
-    res.sendStatus(204)
+        // 4. Crear usuario
+        const newUser = await UsersModel.create(userData);
+        
+        // 5. Eliminar contraseña de la respuesta
+        const { password, ...safeUser } = newUser;
+        
+        // 6. Respuesta segura
+        res.status(201).json(safeUser);
+    } catch (error) {
+        console.error('Error al crear usuario:', error);
+        
+        // Manejo específico de errores de duplicado
+        if (error.code === 11000 || error.code === '23505') {
+            return res.status(409).json({ message: 'El email ya está registrado' });
+        }
+        
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
 }
 
 export const updateUser = async (req, res) => {
-    const {id} = req.params
-    const data = req.body
-
-    console.log(data)
-
-    const {rows} = await pool.query('UPDATE users SET first_name = $1, last_name= $2 email = $3, password = $4 WHERE id_users = $5', [data.name1, data.name2, data.email, data.password, id])
-
-
-    res.json(rows[0])
-}
-
-export const getRoles = async (req, res) => {
-
-    const {rows} = await pool.query('SELECT * FROM role')
- 
-     res.json(rows)
-}
-
-export const registerUser = async (req, res) => {
     try {
-        const data = req.body;
+        const { id } = req.params;
+        const user = await UsersModel.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
 
-        console.log(data)
+        // Campos permitidos para actualizar
+        const updatableFields = ['firstName', 'lastName', 'email', 'dni', 'role', 'status', 'password', "specialtyId"];
+        const updates = {};
 
-        const { rows } = await pool.query(
-            `INSERT INTO "User" 
-            (role_id, first_name, last_name, dni, password, email, status) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7) 
-            RETURNING id, email, first_name, last_name, status`,
-            [3, data.firstName, data.lastName, data.dni, data.password, data.email, "active"]
-        );
-
-
-        res.status(201).json({
-            message: 'Usuario registrado exitosamente',
-            user: {
-                id: rows[0].id,
-                email: rows[0].email,
-                nombre: `${rows[0].first_name} ${rows[0].last_name}`,
-                status: rows[0].status
+        for (const field of updatableFields) {
+            if (req.body[field] !== undefined) {
+                if (field === 'password') {
+                    updates.password = await bcrypt.hash(req.body.password, 10);
+                } else if (field === 'status') {
+                    updates.status = req.body.status ?? "active";
+                } else {
+                    updates[field] = req.body[field];
+                }
             }
-        });
+        }
 
+        // Actualizar usuario
+        const updatedUser = await UsersModel.update(id, updates);
+
+        // Eliminar contraseña de la respuesta
+        const { password, ...safeUser } = updatedUser;
+
+        res.json(safeUser);
     } catch (error) {
-        console.error('Error en registro:', error);
-
-        if (error.code === '23505') {
-            return res.status(409).json({
-                code: 'EMAIL_EXISTS',
-                message: 'El correo electrónico ya está registrado'
-            });
+        console.error('Error al actualizar usuario:', error);
+        if (error.code === 11000 || error.code === '23505') {
+            return res.status(409).json({ message: 'El email ya está registrado' });
         }
-        
-        if (error.code === '23502') {
-            return res.status(400).json({
-                code: 'MISSING_FIELDS',
-                message: 'Faltan campos obligatorios en la solicitud'
-            });
-        }
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+}
 
-        res.status(500).json({
-            code: 'SERVER_ERROR',
-            message: 'Error interno del servidor al procesar el registro'
-        });
+export const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await UsersModel.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+        await UsersModel.deleteById(id);
+        res.json({ message: 'Usuario eliminado correctamente' });
+    } catch (error) {
+        console.error('Error al eliminar usuario:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
     }
 }
