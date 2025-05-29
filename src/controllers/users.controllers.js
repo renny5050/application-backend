@@ -63,10 +63,14 @@ export const createUser = async (req, res) => {
         console.error('Error al crear usuario:', error);
         
         // Manejo específico de errores de duplicado
-        if (error.code === 11000 || error.code === '23505') {
+
+        // Centralizar códigos de errores
+        if (error.code === 11000) {
             return res.status(409).json({ message: 'El email ya está registrado' });
         }
-        
+        if (error.code === '23505'){
+            return res.status(409).json({message: 'DNI ya registrado'});
+        }
         res.status(500).json({ message: 'Error interno del servidor' });
     }
 }
