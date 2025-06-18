@@ -17,4 +17,3 @@ router.get('/api/studentclass/class/:class_id', getStudentsByClass);
 router.delete('/api/studentclass', deleteStudentClass);
 
 export default router;
-
