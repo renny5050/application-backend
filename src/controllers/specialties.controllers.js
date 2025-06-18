@@ -1,6 +1,6 @@
 import Specialty from '../models/specialties.models.js';
 
-export const createSpecialty = async (res) => {
+export const createSpecialty = async (req, res) => {
     try {
         const { name } = req.body;
         const newSpecialty = await Specialty.create(name);
@@ -13,7 +13,7 @@ export const createSpecialty = async (res) => {
 
 export const getAllSpecialties = async (req, res) => {
     try {
-        const specialties = await Specilty.findAll();
+        const specialties = await Specialty.findAll();
         res.json(specialties);
     } catch (error) {
         console.error(error);

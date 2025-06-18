@@ -1,4 +1,4 @@
-import { pool } from '../';
+import { pool } from '../db.js';
 
 class Specialty {
     static async create(name) {
@@ -11,7 +11,7 @@ class Specialty {
 
     static async findAll() {
         const { rows } = await pool.query(
-            'SELECT * FROM specialties ORDE BY id'
+            'SELECT * FROM specialties ORDER BY id'
         );
         return rows;
     }

@@ -39,7 +39,7 @@ export class UsersModel {
   static async findById(id) {
     try {
       const { rows } = await pool.query(
-        'SELECT id, email, first_name, last_name, dnii, status, role_id, specialty_id FROM "User" WHERE id = $1',
+        'SELECT id, email, first_name, last_name, dni, status, role_id, specialty_id FROM "User" WHERE id = $1',
         [id]
       );
       return rows[0];
@@ -69,7 +69,7 @@ export class UsersModel {
   static async delete(id) {
     try {
       const { rowCount } = await pool.query(
-        'DELETE FROM "Users" WHERE id = $1',
+        'DELETE FROM "User" WHERE id = $1',
         [id]
       );
       return rowCount > 0;

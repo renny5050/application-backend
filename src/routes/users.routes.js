@@ -7,13 +7,13 @@ router.get('/api/users', getUsers);
 
 
 // Obtener un usuario específico por ID
-router.get('/api/users', findUserById);
+router.get('/api/users/:id', findUserById);
 
 // Crear nuevo usuario
 router.post('/api/users', createUser);
 
 // Actualizar usuario existente
-router.put('/api/users/:id', updatUser);
+router.put('/api/users/:id', updateUser);
 
 // Eliminar usuario
 router.delete('/api/users/:id', deleteUser);
