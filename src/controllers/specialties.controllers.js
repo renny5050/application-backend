@@ -1,28 +1,16 @@
-import { z } from 'zod';
 import Specialty from '../models/specialties.models.js';
-
-// Esquemas de validación
-const idSchema = z.coerce.number().int().positive();
-const nameSchema = z.string()
-  .min(1, 'El nombre no puede estar vacío')
-  .max(100, 'El nombre no puede exceder los 100 caracteres');
-
-// Esquemas para parámetros de ruta
-const specialtyIdSchema = z.object({ id: idSchema });
-
-// Función para manejar errores de validación
-const handleValidationError = (error, res) => {
-  const errors = error.errors.map(err => ({
-    field: err.path.join('.'),
-    message: err.message
-  }));
-  return res.status(400).json({ errors });
-};
+import { 
+  idSchema, 
+  nameSchema, 
+  specialtyIdSchema, 
+  handleValidationError 
+} from '../validations/specialties.schema.js';
+import handleDatabaseError from '../utils/errormanager.js'; // Importamos el manejador de errores
 
 export const createSpecialty = async (req, res) => {
   try {
-    // Validar el cuerpo de la solicitud
-    const validation = nameSchema.safeParse(req.body.name);
+    // Validar el cuerpo completo de la solicitud
+    const validation = nameSchema.safeParse(req.body);
     if (!validation.success) {
       return handleValidationError(validation.error, res);
     }
@@ -30,8 +18,7 @@ export const createSpecialty = async (req, res) => {
     const newSpecialty = await Specialty.create(validation.data);
     res.status(201).json(newSpecialty);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error creating specialty' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -40,8 +27,7 @@ export const getAllSpecialties = async (req, res) => {
     const specialties = await Specialty.findAll();
     res.json(specialties);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error retrieving specialties' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -59,8 +45,7 @@ export const getSpecialtyById = async (req, res) => {
     }
     res.json(specialty);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error retrieving specialty' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -73,7 +58,7 @@ export const updateSpecialty = async (req, res) => {
     }
     
     // Validar cuerpo de la solicitud
-    const nameValidation = nameSchema.safeParse(req.body.name);
+    const nameValidation = nameSchema.safeParse(req.body);
     if (!nameValidation.success) {
       return handleValidationError(nameValidation.error, res);
     }
@@ -89,8 +74,7 @@ export const updateSpecialty = async (req, res) => {
     
     res.json(updatedSpecialty);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error updating specialty' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -108,7 +92,6 @@ export const deleteSpecialty = async (req, res) => {
     }
     res.status(204).end();
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error deleting specialty' });
+    handleDatabaseError(error, res);
   }
 };

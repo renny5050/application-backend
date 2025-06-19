@@ -1,21 +1,7 @@
-import { z } from 'zod';
 import { UsersModel } from '../models/users.models.js';
 import { generateToken } from '../utils/jwtUtils.js';
-
-// Esquema de validación para el login
-const loginSchema = z.object({
-  email: z.string().email('Formato de email inválido'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres')
-});
-
-// Función para manejar errores de validación
-const handleValidationError = (error, res) => {
-  const errors = error.errors.map(err => ({
-    field: err.path[0],
-    message: err.message
-  }));
-  return res.status(400).json({ errors });
-};
+import { loginSchema, handleValidationError } from '../validations/auth.schema.js';
+import handleDatabaseError  from '../utils/errormanager.js'; // Importamos el manejador de errores
 
 export const login = async (req, res) => {
   try {
@@ -49,7 +35,6 @@ export const login = async (req, res) => {
     res.json({ token });
 
   } catch (error) {
-    console.error('Error en el login:', error);
-    res.status(500).json({ error: 'Error en el servidor' });
+    handleDatabaseError(error, res);
   }
 };

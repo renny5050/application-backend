@@ -36,4 +36,13 @@ function getPostgresErrorMessage(errorCode) {
     return errorMessages[errorCode] || `Error desconocido (código: ${errorCode})`;
 }
 
-module.exports = getPostgresErrorMessage;
+const handleDatabaseError = (error, res) => {
+  console.error('Error de base de datos:', error);
+  
+  if (error.code) {
+    const message = getPostgresErrorMessage(error.code);
+    return res.status(400).json({ error: message });
+  }
+};
+
+export default handleDatabaseError;

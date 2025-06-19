@@ -1,38 +1,11 @@
-import { z } from 'zod';
 import ItemModel from '../models/items.model.js';
-
-// Esquemas de validación
-const idSchema = z.coerce.number().int().positive();
-const nameSchema = z.string().min(1, 'El nombre no puede estar vacío').max(100, 'El nombre no puede exceder los 100 caracteres');
-const quantitySchema = z.number().int().nonnegative('La cantidad debe ser un número entero no negativo');
-
-// Esquema para creación
-const createItemSchema = z.object({
-  name: nameSchema,
-  quantity: quantitySchema
-});
-
-// Esquema para actualización
-const updateItemSchema = z.object({
-  name: nameSchema.optional(),
-  quantity: quantitySchema.optional()
-}).refine(data => {
-  return Object.keys(data).length > 0;
-}, {
-  message: 'Se requiere al menos un campo para actualizar'
-});
-
-// Esquema para parámetros de ruta
-const itemIdSchema = z.object({ id: idSchema });
-
-// Función para manejar errores de validación
-const handleValidationError = (error, res) => {
-  const errors = error.errors.map(err => ({
-    field: err.path.join('.'),
-    message: err.message
-  }));
-  return res.status(400).json({ errors });
-};
+import {
+  createItemSchema,
+  updateItemSchema,
+  itemIdSchema,
+  handleValidationError
+} from '../validations/items.schema.js';
+import handleDatabaseError from '../utils/errormanager.js'; // Importamos el manejador de errores
 
 export const createItem = async (req, res) => {
   try {
@@ -44,8 +17,7 @@ export const createItem = async (req, res) => {
     const newItem = await ItemModel.create(validation.data);
     res.status(201).json(newItem);
   } catch (error) {
-    console.error('Error creando ítem:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -54,8 +26,7 @@ export const getAllItems = async (req, res) => {
     const items = await ItemModel.findAll();
     res.json(items);
   } catch (error) {
-    console.error('Error obteniendo ítems:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -72,8 +43,7 @@ export const getItemById = async (req, res) => {
     }
     res.json(item);
   } catch (error) {
-    console.error('Error obteniendo ítem:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -100,8 +70,7 @@ export const updateItem = async (req, res) => {
     
     res.json(updatedItem);
   } catch (error) {
-    console.error('Error actualizando ítem:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -118,7 +87,6 @@ export const deleteItem = async (req, res) => {
     }
     res.status(204).end();
   } catch (error) {
-    console.error('Error eliminando ítem:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };

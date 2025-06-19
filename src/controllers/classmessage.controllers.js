@@ -1,41 +1,12 @@
-import { z } from 'zod';
 import ClassMessageModel from '../models/classmessage.model.js';
-
-// Esquemas de validación
-const idSchema = z.coerce.number().int().positive();
-const titleSchema = z.string().max(100, 'El título no puede exceder los 100 caracteres').optional();
-const contentSchema = z.string().min(1, 'El contenido no puede estar vacío');
-
-// Esquema para creación
-const createMessageSchema = z.object({
-  class_id: idSchema,
-  title: titleSchema,
-  content: contentSchema
-});
-
-// Esquema para actualización
-const updateMessageSchema = z.object({
-  class_id: idSchema.optional(),
-  title: titleSchema,
-  content: contentSchema.optional()
-}).refine(data => {
-  return Object.keys(data).length > 0;
-}, {
-  message: 'Se requiere al menos un campo para actualizar'
-});
-
-// Esquemas de parámetros
-const messageIdSchema = z.object({ id: idSchema });
-const classIdParamSchema = z.object({ class_id: idSchema });
-
-// Función para manejar errores de validación
-const handleValidationError = (error, res) => {
-  const errors = error.errors.map(err => ({
-    field: err.path.join('.'),
-    message: err.message
-  }));
-  return res.status(400).json({ errors });
-};
+import {
+  createMessageSchema,
+  updateMessageSchema,
+  messageIdSchema,
+  classIdParamSchema,
+  handleValidationError
+} from '../validations/classmessage.schema.js';
+import handleDatabaseError from '../utils/errormanager.js'; // Importamos el manejador de errores
 
 export const createClassMessage = async (req, res) => {
   try {
@@ -47,8 +18,7 @@ export const createClassMessage = async (req, res) => {
     const newMessage = await ClassMessageModel.create(validation.data);
     res.status(201).json(newMessage);
   } catch (error) {
-    console.error('Error creando mensaje de clase:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -57,8 +27,7 @@ export const getAllClassMessages = async (req, res) => {
     const messages = await ClassMessageModel.findAll();
     res.json(messages);
   } catch (error) {
-    console.error('Error obteniendo mensajes de clase:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -75,8 +44,7 @@ export const getClassMessageById = async (req, res) => {
     }
     res.json(message);
   } catch (error) {
-    console.error('Error obteniendo mensaje por ID:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -90,8 +58,7 @@ export const getClassMessagesByClass = async (req, res) => {
     const messages = await ClassMessageModel.findByClass(validation.data.class_id);
     res.json(messages);
   } catch (error) {
-    console.error('Error obteniendo mensajes por clase:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -118,8 +85,7 @@ export const updateClassMessage = async (req, res) => {
     
     res.json(updatedMessage);
   } catch (error) {
-    console.error('Error actualizando mensaje:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -136,7 +102,6 @@ export const deleteClassMessage = async (req, res) => {
     }
     res.status(204).end();
   } catch (error) {
-    console.error('Error eliminando mensaje:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };

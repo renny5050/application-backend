@@ -1,49 +1,17 @@
-import { z } from 'zod';
+// controllers/attendance.controller.js
 import AttendanceModel from '../models/attendance.model.js';
+import {
+  attendanceSchema,
+  partialAttendanceSchema,
+  attendanceIdSchema,
+  studentClassSchema,
+  classDateSchema,
+  studentIdSchema,
+  classIdSchema,
+  handleValidationError
+} from '../validations/attendance.schema.js';
+import handleDatabaseError from '../utils/errormanager.js'; // Importamos el manejador de errores
 
-// Esquemas de validación
-const idSchema = z.coerce.number().int().positive();
-const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-
-const attendanceSchema = z.object({
-  student_id: idSchema,
-  class_id: idSchema,
-  date: dateSchema,
-  present: z.boolean()
-});
-
-const partialAttendanceSchema = attendanceSchema.partial();
-
-const attendanceIdSchema = z.object({
-  id: idSchema
-});
-
-const studentClassSchema = z.object({
-  student_id: idSchema,
-  class_id: idSchema
-});
-
-const classDateSchema = z.object({
-  class_id: idSchema,
-  date: dateSchema
-});
-
-const studentIdSchema = z.object({
-  student_id: idSchema
-});
-
-const classIdSchema = z.object({
-  class_id: idSchema
-});
-
-// Utilidad para manejar errores de validación
-const handleValidationError = (error, res) => {
-  const errors = error.errors.map(err => ({
-    field: err.path.join('.'),
-    message: err.message
-  }));
-  return res.status(400).json({ errors });
-};
 
 export const createAttendance = async (req, res) => {
   try {
@@ -55,8 +23,7 @@ export const createAttendance = async (req, res) => {
     const newAttendance = await AttendanceModel.create(validation.data);
     res.status(201).json(newAttendance);
   } catch (error) {
-    console.error('Error creando registro de asistencia:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -65,8 +32,7 @@ export const getAllAttendances = async (req, res) => {
     const attendances = await AttendanceModel.findAll();
     res.json(attendances);
   } catch (error) {
-    console.error('Error obteniendo registros de asistencia:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -83,8 +49,7 @@ export const getAttendanceById = async (req, res) => {
     }
     res.json(attendance);
   } catch (error) {
-    console.error('Error obteniendo registro de asistencia:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -114,8 +79,7 @@ export const updateAttendance = async (req, res) => {
 
     res.json(updatedAttendance);
   } catch (error) {
-    console.error('Error actualizando registro de asistencia:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -132,8 +96,7 @@ export const deleteAttendance = async (req, res) => {
     }
     res.status(204).end();
   } catch (error) {
-    console.error('Error eliminando registro de asistencia:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -148,8 +111,7 @@ export const getAttendanceByStudentAndClass = async (req, res) => {
     const attendances = await AttendanceModel.findByStudentAndClass(student_id, class_id);
     res.json(attendances);
   } catch (error) {
-    console.error('Error obteniendo asistencias por estudiante y clase:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -164,8 +126,7 @@ export const getAttendanceByClassAndDate = async (req, res) => {
     const attendances = await AttendanceModel.findByClassAndDate(class_id, date);
     res.json(attendances);
   } catch (error) {
-    console.error('Error obteniendo asistencias por clase y fecha:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -180,8 +141,7 @@ export const getAttendanceByStudent = async (req, res) => {
     const attendances = await AttendanceModel.findByStudent(student_id);
     res.json(attendances);
   } catch (error) {
-    console.error('Error obteniendo asistencias por estudiante:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };
 
@@ -196,7 +156,6 @@ export const getAttendanceByClass = async (req, res) => {
     const attendances = await AttendanceModel.findByClass(class_id);
     res.json(attendances);
   } catch (error) {
-    console.error('Error obteniendo asistencias por clase:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 };

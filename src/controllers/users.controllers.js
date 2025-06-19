@@ -1,63 +1,13 @@
-import { z } from 'zod';
 import { UsersModel } from "../models/users.models.js";
 import bcrypt from 'bcrypt';
-
-// Esquemas de validación
-const idSchema = z.coerce.number().int().positive();
-const firstNameSchema = z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(50, 'El nombre no puede exceder los 50 caracteres');
-const lastNameSchema = z.string().min(2, 'El apellido debe tener al menos 2 caracteres').max(50, 'El apellido no puede exceder los 50 caracteres');
-const emailSchema = z.string().email('Formato de email inválido');
-const dniSchema = z.string().min(8, 'El DNI debe tener al menos 8 caracteres').max(15, 'El DNI no puede exceder los 15 caracteres');
-const passwordSchema = z.string().min(6, 'La contraseña debe tener al menos 6 caracteres');
-const roleSchema = z.coerce.number().int().min(1, 'Rol inválido').max(4, 'Rol inválido').default(3); // Valor predeterminado 3
-const statusSchema = z.enum(['active', 'inactive', 'pending'], { 
-  message: 'Estado inválido. Valores permitidos: active, inactive, pending' 
-});
-const specialtyIdSchema = z.coerce.number().int().positive().optional(); // Opcional sin valor predeterminado
-
-// Esquema para creación de usuario
-const createUserSchema = z.object({
-  firstName: firstNameSchema,
-  lastName: lastNameSchema,
-  email: emailSchema,
-  dni: dniSchema,
-  password: passwordSchema,
-  role: roleSchema.optional(), // Usará el valor predeterminado 3 si no se envía
-  status: statusSchema.optional().default('active'),
-  specialtyId: specialtyIdSchema // Opcional sin valor predeterminado
-});
-
-// Esquema para actualización de usuario
-const updateUserSchema = z.object({
-  firstName: firstNameSchema.optional(),
-  lastName: lastNameSchema.optional(),
-  email: emailSchema.optional(),
-  dni: dniSchema.optional(),
-  password: passwordSchema.optional(),
-  role: roleSchema.optional(),
-  status: statusSchema.optional(),
-  specialtyId: specialtyIdSchema // Opcional sin valor predeterminado
-}).refine(data => Object.keys(data).length > 0, {
-  message: 'Se requiere al menos un campo para actualizar'
-});
-
-// Esquema para parámetros de ruta
-const userIdParamSchema = z.object({ id: idSchema });
-
-// Función para manejar errores de validación
-const handleValidationError = (error, res) => {
-  const errors = error.errors.map(err => ({
-    field: err.path.join('.'),
-    message: err.message
-  }));
-  return res.status(400).json({ errors });
-};
-
-// Función para eliminar contraseña de los objetos de usuario
-const removePassword = (user) => {
-  const { password, ...safeUser } = user;
-  return safeUser;
-};
+import {
+  createUserSchema,
+  updateUserSchema,
+  userIdParamSchema,
+  handleValidationError,
+  removePassword
+} from "../validations/user.schema.js";
+import handleDatabaseError from "../utils/errormanager.js"; // Importamos el manejador de errores
 
 export const getUsers = async (req, res) => {
   try {
@@ -66,8 +16,7 @@ export const getUsers = async (req, res) => {
     const safeData = data.map(removePassword);
     res.json(safeData);
   } catch (error) {
-    console.error('Error al obtener usuarios:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 }
 
@@ -87,8 +36,7 @@ export const findUserById = async (req, res) => {
     // Eliminar contraseña de la respuesta
     res.json(removePassword(user));
   } catch (error) {
-    console.error('Error al buscar usuario por ID:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 }
 
@@ -116,17 +64,8 @@ export const createUser = async (req, res) => {
     // Respuesta segura (sin contraseña)
     res.status(201).json(removePassword(newUser));
   } catch (error) {
-    console.error('Error al crear usuario:', error);
     
-    // Manejo específico de errores de duplicado
-    if (error.code === 11000 || error.code === '23505') {
-      return res.status(409).json({ 
-        message: 'El email o DNI ya está registrado',
-        field: error.keyValue ? Object.keys(error.keyValue)[0] : 'email'
-      });
-    }
-    
-    res.status(500).json({ message: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 }
 
@@ -162,17 +101,21 @@ export const updateUser = async (req, res) => {
     // Respuesta segura (sin contraseña)
     res.json(removePassword(updatedUser));
   } catch (error) {
-    console.error('Error al actualizar usuario:', error);
-    
     // Manejo específico de errores de duplicado
-    if (error.code === 11000 || error.code === '23505') {
+    if (error.code === '23505') {
+      // Determinar qué campo causó la violación de unicidad
+      let field = 'email';
+      if (error.detail.includes('dni')) {
+        field = 'dni';
+      }
+      
       return res.status(409).json({ 
-        message: 'El email o DNI ya está registrado',
-        field: error.keyValue ? Object.keys(error.keyValue)[0] : 'email'
+        message: `El ${field} ya está registrado`,
+        field
       });
     }
     
-    res.status(500).json({ message: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 }
 
@@ -199,7 +142,6 @@ export const deleteUser = async (req, res) => {
       user: removePassword(user)
     });
   } catch (error) {
-    console.error('Error al eliminar usuario:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    handleDatabaseError(error, res);
   }
 }
