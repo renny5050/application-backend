@@ -25,6 +25,7 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
+    
     // 3. Generar JWT
     const token = generateToken({ 
       id: user.id, 

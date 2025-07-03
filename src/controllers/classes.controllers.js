@@ -12,11 +12,13 @@ import handleDatabaseError from '../utils/errormanager.js'; // Importamos el man
 
 export const createClass = async (req, res) => {
   try {
+    console.log('Creando nueva clase...', req.body);
     const validation = classSchema.safeParse(req.body);
     if (!validation.success) {
       return handleValidationError(validation.error, res);
     }
 
+    console.log('Datos de la nueva clase:', validation.data);
     const newClass = await Class.create(validation.data);
     res.status(201).json(newClass);
   } catch (error) {
@@ -25,6 +27,7 @@ export const createClass = async (req, res) => {
 };
 
 export const getAllClasses = async (req, res) => {
+  console.log('Fetching all classes');
   try {
     const classes = await Class.findAll();
     res.json(classes);

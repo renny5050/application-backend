@@ -42,12 +42,16 @@ export const findUserById = async (req, res) => {
 
 export const createUser = async (req, res) => {
   try {
+    console.log('Creando nuevo usuario...', req.body);
     // Validar cuerpo de la solicitud
     const validation = createUserSchema.safeParse(req.body);
     if (!validation.success) {
+      console.log('Error de validación:', validation.error);
       return handleValidationError(validation.error, res);
     }
 
+    
+    console.log('Creando nuevo usuario...', validation.data);
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(validation.data.password, 10);
     
@@ -55,10 +59,11 @@ export const createUser = async (req, res) => {
     const userData = { 
       ...validation.data, 
       password: hashedPassword,
-      role: validation.data.role || 3 // Asegurar valor predeterminado 3 para role
+      role_id: validation.data.role_id || 3 // Asegurar valor predeterminado 3 para role
     };
 
     // Crear usuario
+    
     const newUser = await UsersModel.create(userData);
     
     // Respuesta segura (sin contraseña)
@@ -71,6 +76,8 @@ export const createUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
+    console.log('Actualizando usuario...');
+    console.log('Datos recibidos:', req.body);
     // Validar parámetro de ruta
     const idValidation = userIdParamSchema.safeParse(req.params);
     if (!idValidation.success) {
@@ -78,8 +85,12 @@ export const updateUser = async (req, res) => {
     }
 
     // Validar cuerpo de la solicitud
+    console.log('cuerpo de la solicitud:', req.body);
     const bodyValidation = updateUserSchema.safeParse(req.body);
+    console.log('Cuerpo de la solicitud:', bodyValidation.data);
+    
     if (!bodyValidation.success) {
+      console.log('Error de validación:', bodyValidation.error);
       return handleValidationError(bodyValidation.error, res);
     }
 
@@ -134,13 +145,33 @@ export const deleteUser = async (req, res) => {
     }
 
     // Eliminar usuario
-    await UsersModel.deleteById(validation.data.id);
+    await UsersModel.delete(validation.data.id);
     
     // Respuesta segura (sin contraseña)
     res.json({ 
       message: 'Usuario eliminado correctamente',
       user: removePassword(user)
     });
+  } catch (error) {
+    handleDatabaseError(error, res);
+  }
+}
+
+export const getTeachers = async (req, res) => {
+  try {
+    const teachers = await UsersModel.findTeachers();
+    const safeTeachers = teachers.map(removePassword);
+    res.json(safeTeachers);
+  } catch (error) {
+    handleDatabaseError(error, res);
+  }
+}
+
+export const getStudents = async (req, res) => {
+  try {
+    const students = await UsersModel.findStudents();
+    const safeStudents = students.map(removePassword);
+    res.json(safeStudents);
   } catch (error) {
     handleDatabaseError(error, res);
   }

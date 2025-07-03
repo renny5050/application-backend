@@ -6,6 +6,7 @@ import {
   handleValidationError
 } from '../validations/studentclass.schema.js';
 import handleDatabaseError from '../utils/errormanager.js'; // Importamos el manejador de errores
+import { z } from 'zod';
 
 export const createStudentClass = async (req, res) => {
   try {
@@ -56,6 +57,7 @@ export const getClassesByStudent = async (req, res) => {
 
 export const getStudentsByClass = async (req, res) => {
   try {
+    console.log('Obteniendo estudiantes por clase...');
     // Validar parámetro de ruta
     const validation = classIdParamSchema.safeParse(req.params);
     if (!validation.success) {
@@ -71,27 +73,34 @@ export const getStudentsByClass = async (req, res) => {
 
 export const deleteStudentClass = async (req, res) => {
   try {
-    // Validar parámetros de la ruta (cambiado de body a params)
-    const validation = studentIdParamSchema.and(classIdParamSchema).safeParse(req.params);
+    console.log('Eliminando relación estudiante-clase...');
+    
+    // Log para depurar
+    console.log('Datos recibidos:', req.body);
+
+    // Validar parámetros del body
+    const validation = z.object({
+      student_id: z.coerce.number().int().positive(),
+      class_id: z.coerce.number().int().positive()
+    }).safeParse(req.body);
+    
     if (!validation.success) {
-      return handleValidationError(validation.error, res);
+      console.error('Error de validación:', validation.error);
+      return res.status(400).json({ error: validation.error.message });
     }
     
     const { student_id, class_id } = validation.data;
+
+    // Eliminar la relación estudiante-clase
+    const deleted = await StudentClassModel.delete(student_id, class_id);
     
-    // Verificar si existe la relación
-    const exists = await StudentClassModel.exists(student_id, class_id);
-    if (!exists) {
-      return res.status(404).json({ error: 'Relación no encontrada' });
+    if (deleted) {
+      res.status(200).json({ message: 'Relación eliminada correctamente' });
+    } else {
+      res.status(404).json({ error: 'Relación no encontrada' });
     }
-    
-    const result = await StudentClassModel.delete(student_id, class_id);
-    if (!result) {
-      return res.status(500).json({ error: 'Error al eliminar la relación' });
-    }
-    
-    res.status(204).end();
   } catch (error) {
-    handleDatabaseError(error, res);
+    console.error('Error en la base de datos:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };

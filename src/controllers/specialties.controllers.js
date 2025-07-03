@@ -10,7 +10,7 @@ import handleDatabaseError from '../utils/errormanager.js'; // Importamos el man
 export const createSpecialty = async (req, res) => {
   try {
     // Validar el cuerpo completo de la solicitud
-    const validation = nameSchema.safeParse(req.body);
+    const validation = nameSchema.safeParse(req.body.name);
     if (!validation.success) {
       return handleValidationError(validation.error, res);
     }

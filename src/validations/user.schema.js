@@ -20,9 +20,9 @@ const createUserSchema = z.object({
     email: emailSchema,
     dni: dniSchema,
     password: passwordSchema,
-    role: roleSchema.optional(), // Usará el valor predeterminado 3 si no se envía
+    role_id: roleSchema.optional(), // Usará el valor predeterminado 3 si no se envía
     status: statusSchema.optional().default('active'),
-    specialtyId: specialtyIdSchema // Opcional sin valor predeterminado
+    specialty_id: specialtyIdSchema.optional() // Opcional sin valor predeterminado
 });
 
 // Esquema para actualización de usuario
@@ -32,7 +32,7 @@ const updateUserSchema = z.object({
     email: emailSchema.optional(),
     dni: dniSchema.optional(),
     password: passwordSchema.optional(),
-    role: roleSchema.optional(),
+    role_id: roleSchema.optional(),
     status: statusSchema.optional(),
     specialtyId: specialtyIdSchema // Opcional sin valor predeterminado
 }).refine(data => Object.keys(data).length > 0, {

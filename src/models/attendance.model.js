@@ -15,7 +15,12 @@ class AttendanceModel {
 
     // Obtener todos los registros de asistencia
     static async findAll() {
-        const query = 'SELECT * FROM attendance ORDER BY date DESC';
+        const query = `
+            SELECT attendance.*, "User".first_name, "User".email
+            FROM attendance
+            INNER JOIN "User" ON attendance.student_id = "User".id
+            ORDER BY attendance.date DESC
+        `;
         const { rows } = await pool.query(query);
         return rows;
     }

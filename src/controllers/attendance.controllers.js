@@ -15,8 +15,10 @@ import handleDatabaseError from '../utils/errormanager.js'; // Importamos el man
 
 export const createAttendance = async (req, res) => {
   try {
+    console.log('Creando nuevo registro de asistencia...', req.body);
     const validation = attendanceSchema.safeParse(req.body);
     if (!validation.success) {
+      console.log('Error de validación:', validation.error);
       return handleValidationError(validation.error, res);
     }
 
