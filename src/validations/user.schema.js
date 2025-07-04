@@ -11,7 +11,7 @@ const roleSchema = z.coerce.number().int().min(1, 'Rol inválido').max(4, 'Rol i
 const statusSchema = z.enum(['active', 'inactive', 'pending'], { 
     message: 'Estado inválido. Valores permitidos: active, inactive, pending' 
 });
-const specialtyIdSchema = z.coerce.number().int().positive().optional(); // Opcional sin valor predeterminado
+const specialtyIdSchema = z.coerce.number().int().positive().optional().nullable(); // Opcional sin valor predeterminado
 
 // Esquema para creación de usuario
 const createUserSchema = z.object({
@@ -22,7 +22,7 @@ const createUserSchema = z.object({
     password: passwordSchema,
     role_id: roleSchema.optional(), // Usará el valor predeterminado 3 si no se envía
     status: statusSchema.optional().default('active'),
-    specialty_id: specialtyIdSchema.optional() // Opcional sin valor predeterminado
+    specialty_id: specialtyIdSchema // Opcional sin valor predeterminado
 });
 
 // Esquema para actualización de usuario
